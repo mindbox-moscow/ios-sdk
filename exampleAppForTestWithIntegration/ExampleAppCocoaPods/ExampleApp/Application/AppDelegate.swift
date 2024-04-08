@@ -307,7 +307,7 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
         }
         
         UNUserNotificationCenter.current()
-            .requestAuthorization(options: [.alert, .badge, .sound]) { granted, error in
+            .requestAuthorization(options: [.alert, .badge, .sound, .provisional]) { granted, error in
                 Mindbox.logger.log(level: .info, message: "Permission granted \(granted)")
                 if let error {
                     Mindbox.logger.log(

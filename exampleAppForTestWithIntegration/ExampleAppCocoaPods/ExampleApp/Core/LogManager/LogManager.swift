@@ -20,8 +20,19 @@ enum UserDefaultsSdkKeys: String, CaseIterable {
 }
 
 enum FileNames: String {
-    case logFile = "appLogs.txt"
+    case logFile = "appLogs"
     case fileWithProtection = "testFileWithProtection.txt"
+    
+    var fileNameWithDate: String {
+        
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "dd-MM"
+        
+        let dateString = formatter.string(from: Date())
+        
+        return "\(self.rawValue)_\(dateString).txt"
+    }
 }
 
 final class EALogManager {
@@ -49,7 +60,7 @@ final class EALogManager {
         
         if let logData = logMessage.data(using: .utf8) {
             do {
-                try self.fileManager.append(toFileNamed: FileNames.logFile.rawValue, data: logData)
+                try self.fileManager.append(toFileNamed: FileNames.logFile.fileNameWithDate, data: logData)
             } catch {
                 Logger.logManager.error("Error writing \(error.localizedDescription)")
             }
@@ -62,7 +73,7 @@ final class EALogManager {
         
         if let logData = logMessage.data(using: .utf8) {
             do {
-                try self.fileManager.append(toFileNamed: FileNames.logFile.rawValue, data: logData)
+                try self.fileManager.append(toFileNamed: FileNames.logFile.fileNameWithDate, data: logData)
             } catch {
                 Logger.logManager.error("Error writing \(error.localizedDescription)")
             }
@@ -111,7 +122,7 @@ final class EALogManager {
     
     func readLogs(fileName: FileNames) -> String {
         do {
-            let logData = try fileManager.read(fileNamed: fileName.rawValue)
+            let logData = try fileManager.read(fileNamed: fileName.fileNameWithDate)
             
             if let logString = String(data: logData, encoding: .utf8) {
                 return logString
@@ -128,7 +139,7 @@ final class EALogManager {
 
 extension EALogManager {
     func testWriteLogsWithProtection() {
-        let fileName = FileNames.fileWithProtection.rawValue
+        let fileName = FileNames.fileWithProtection.fileNameWithDate
         
         let message = #function + "\nisProtectedDataAvailable: \(UIApplication.shared.isProtectedDataAvailable)"
         let timestamp = dateFormatter.string(from: Date())

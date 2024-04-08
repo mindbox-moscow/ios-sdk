@@ -30,8 +30,19 @@ final class EAFileManager {
         else {
             return nil
         }
+        
+        let logsDirectoryURL = url.appending(path: "Logs")
+        
+        if !fileManager.fileExists(atPath: logsDirectoryURL.path) {
+            do {
+                try fileManager.createDirectory(at: logsDirectoryURL, withIntermediateDirectories: true)
+            } catch {
+                debugPrint(FileManagerError.creatingLogsDirectoryFailed.localizedDescription)
+                return nil
+            }
+        }
 
-        return url.appending(path: fileName)
+        return logsDirectoryURL.appending(path: fileName)
     }
     
     func appendSafely(fileNamed fileName: String, data: Data) throws {
@@ -67,7 +78,7 @@ extension EAFileManager: FileManagerProtocol {
         if !fileManager.fileExists(atPath: url.path) {
 //            fileManager.createFile(atPath: url.path, contents: data)
             do {
-                try data.write(to: url, options: [.noFileProtection, .atomic])
+                try data.write(to: url, options: [.noFileProtection])
             } catch {
                 throw FileManagerError.creatingFileFailed
             }
@@ -90,7 +101,7 @@ extension EAFileManager: FileManagerProtocol {
         if !fileManager.fileExists(atPath: url.path) {
 //            fileManager.createFile(atPath: url.path, contents: data)
             do {
-                try data.write(to: url, options: [.completeFileProtection, .atomic])
+                try data.write(to: url, options: [.completeFileProtection])
             } catch {
                 throw FileManagerError.creatingFileFailed
             }
@@ -117,4 +128,5 @@ enum FileManagerError: Error {
     case fileNotExist
     case readingFailed
     case creatingFileFailed
+    case creatingLogsDirectoryFailed
 }
