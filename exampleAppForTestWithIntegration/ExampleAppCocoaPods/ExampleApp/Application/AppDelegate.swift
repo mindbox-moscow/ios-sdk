@@ -42,6 +42,11 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
         Crashlytics.crashlytics().log("Start \(#function), before MindboxLogger: isProtectedDataAvailable: \(UIApplication.shared.isProtectedDataAvailable)")
         
         Mindbox.logger.log(level: .info, message: "Test log isProtectedDataAvailable: \(UIApplication.shared.isProtectedDataAvailable)")
+        DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(3)) {
+            for i in 0..<100 {
+                Mindbox.logger.log(level: .debug, message: "Test log \(i) isProtectedDataAvailable: \(UIApplication.shared.isProtectedDataAvailable)")
+            }
+        }
         
         Crashlytics.crashlytics().setCustomValue(
             UIApplication.shared.isProtectedDataAvailable,
