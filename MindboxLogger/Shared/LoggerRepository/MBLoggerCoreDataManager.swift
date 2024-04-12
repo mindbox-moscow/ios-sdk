@@ -173,6 +173,10 @@ private extension MBLoggerCoreDataManager {
     
     private func saveContext(_ context: NSManagedObjectContext) throws {
         do {
+//            let curThread = Thread.current
+//            let isMainThread = Thread.isMainThread
+//            let message = "Current thread: \(curThread)\nisMainThread: \(isMainThread)"
+//            SdkLogManager.shared.log(message)
             try context.save()
         } catch {
             switch error {
