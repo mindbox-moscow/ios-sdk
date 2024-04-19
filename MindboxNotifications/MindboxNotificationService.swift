@@ -22,12 +22,15 @@ public class MindboxNotificationService: NSObject {
     private var context: NSExtensionContext?
     private var viewController: UIViewController?
     private let log = OSLog(subsystem: "cloud.Mindbox", category: "Notifications")
+    
+    private typealias SavedImageDataInfo = (fileName: String, fileUrl: URL, directory: URL)
 
     /// Mindbox proxy for NotificationsService and NotificationViewController
     public override init() {
         super.init()
     }
 
+    // Big image
     /// Call this method in `didReceive(_ notification: UNNotification)` of `NotificationViewController`
     public func didReceive(notification: UNNotification, viewController: UIViewController, extensionContext: NSExtensionContext?) {
         context = extensionContext
@@ -36,6 +39,7 @@ public class MindboxNotificationService: NSObject {
         createContent(for: notification, extensionContext: extensionContext)
     }
 
+    // Small image
     /// Call this method in `didReceive(_ request, withContentHandler)` of `NotificationService`
     public func didReceive(_ request: UNNotificationRequest, withContentHandler contentHandler: @escaping (UNNotificationContent) -> Void) {
         self.contentHandler = contentHandler
@@ -93,8 +97,8 @@ public class MindboxNotificationService: NSObject {
 
             Logger.response(data: data, response: response, error: error)
             
-            if let attachment = self.saveImage(data) {
-                self.bestAttemptContent?.attachments = [attachment]
+            if let attachments = self.createNotificationAttachments(data) {
+                self.bestAttemptContent?.attachments = attachments
             }
         }.resume()
     }
@@ -119,7 +123,7 @@ public class MindboxNotificationService: NSObject {
             return
         }
 
-        if let attachment = notification.request.content.attachments.first,
+        if let attachment = notification.request.content.attachments.last,
            attachment.url.startAccessingSecurityScopedResource() {
             createImageView(with: attachment.url.path, view: viewController?.view)
         }
@@ -151,13 +155,15 @@ public class MindboxNotificationService: NSObject {
     }
 
     private func createImageView(with imagePath: String, view: UIView?) {
+        print(#function)
         guard let view = view,
               let data = FileManager.default.contents(atPath: imagePath) else {
             Logger.common(message: "MindboxNotificationService: Failed to create view. imagePath: \(imagePath), view: \(String(describing: view))", level: .error, category: .notification)
             return
         }
 
-        let imageView = UIImageView(image: UIImage(data: data))
+        let image = ImageFormat.getImage(imageData: data)
+        let imageView = UIImageView(image: image)
         imageView.contentMode = .scaleAspectFill
         imageView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(imageView)
@@ -206,26 +212,69 @@ public class MindboxNotificationService: NSObject {
         }
     }
 
-    private func saveImage(_ data: Data) -> UNNotificationAttachment? {
-        let name = UUID().uuidString
+    private func createNotificationAttachments(_ data: Data) -> [UNNotificationAttachment]? {
         guard let format = ImageFormat(data) else {
             Logger.common(message: "MindboxNotificationService: Image load failed, data: \(data)", level: .error, category: .notification)
             return nil
         }
+        
+        guard let notificationAttachment = createNotificationAttachment(data, format: format) else {
+            return nil
+        }
+        
+        var notificationAttachments: [UNNotificationAttachment]
+        
+        switch format {
+        case .png, .jpg:
+            notificationAttachments = [notificationAttachment]
+        case .gif:
+            if let firstFrameData = extractFirstFrame(from: data),
+               let firstFrameNotificationAttachment = createNotificationAttachment(firstFrameData, format: .gif) {
+                notificationAttachments = [firstFrameNotificationAttachment, notificationAttachment]
+            } else {
+                notificationAttachments = [notificationAttachment]
+            }
+        }
+
+        return notificationAttachments
+    }
+    
+    private func saveImageData(_ data: Data, format: ImageFormat) -> SavedImageDataInfo? {
+        let name = UUID().uuidString
         let url = URL(fileURLWithPath: NSTemporaryDirectory())
         let directory = url.appendingPathComponent(ProcessInfo.processInfo.globallyUniqueString, isDirectory: true)
+        
         do {
-            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true, attributes: nil)
-            let fileURL = directory.appendingPathComponent(name, isDirectory: true).appendingPathExtension(format.extension)
+            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+            var fileURL: URL
+            if #available(iOSApplicationExtension 16.0, *) {
+                fileURL = directory.appending(path: name, directoryHint: .isDirectory).appendingPathExtension(format.extension)
+            } else {
+                fileURL = directory.appendingPathComponent(name, isDirectory: true).appendingPathExtension(format.extension)
+            }
             try data.write(to: fileURL, options: .atomic)
-            return try UNNotificationAttachment(identifier: name, url: fileURL, options: nil)
+            return (name, fileURL, directory)
         } catch {
             Logger.common(message: "MindboxNotificationService: Failed to save image. data: \(data), name: \(name), url: \(url), directory: \(directory)", level: .error, category: .notification)
             return nil
         }
     }
+    
+    private func createNotificationAttachment(_ data: Data, format: ImageFormat) -> UNNotificationAttachment? {
+        guard let image = saveImageData(data, format: format) else { return nil }
+        
+        do {
+            return try UNNotificationAttachment(identifier: image.fileName, url: image.fileUrl)
+        } catch {
+            let message = "MindboxNotificationService: Failed to create UNNotificationAttachment. data: \(data), name: \(image.fileName), url: \(image.fileUrl), directory: \(image.directory)"
+            Logger.common(message: message, level: .error, category: .notification)
+            return nil
+        }
+    }
+    
+    private func extractFirstFrame(from gifData: Data) -> Data? {
+        guard let source = CGImageSourceCreateWithData(gifData as CFData, nil),
+              let imageRef = CGImageSourceCreateImageAtIndex(source, 0, nil) else { return nil }
+        return UIImage(cgImage: imageRef).pngData()
+    }
 }
-
-
-
-

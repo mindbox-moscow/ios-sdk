@@ -6,7 +6,7 @@
 //  Copyright © 2021 Mindbox. All rights reserved.
 //
 
-import Foundation
+import UIKit.UIImage
 import MindboxLogger
 
 enum ImageFormat: String {
@@ -42,5 +42,42 @@ extension ImageFormat {
             Logger.common(message: "ImageFormat: Failed to get image format", level: .error, category: .notification)
             return nil
         }
+    }
+    
+    static func getImage(imageData: Data?) -> UIImage? {
+        guard let imageData else { return nil  }
+        
+        let imageFormat = ImageFormat.get(from: imageData)
+        
+        switch imageFormat {
+        case .gif:
+            return animatedImage(withGIFData: imageData)
+        default:
+            return UIImage(data: imageData)
+        }
+    }
+    
+    private static func animatedImage(withGIFData data: Data) -> UIImage? {
+        guard let source = CGImageSourceCreateWithData(data as CFData, nil) else { return nil }
+        
+        let frameCount = CGImageSourceGetCount(source)
+        var frames: [UIImage] = []
+        var gifDuration = 0.0
+        
+        for i in 0..<frameCount {
+            guard let cgImage = CGImageSourceCreateImageAtIndex(source, i, nil) else { continue }
+            
+            if let properties = CGImageSourceCopyPropertiesAtIndex(source, i, nil),
+               let gifInfo = (properties as NSDictionary)[kCGImagePropertyGIFDictionary as String] as? NSDictionary,
+               let frameDuration = (gifInfo[kCGImagePropertyGIFDelayTime as String] as? NSNumber) {
+                gifDuration += frameDuration.doubleValue
+            }
+            
+            let frameImage = UIImage(cgImage: cgImage)
+            frames.append(frameImage)
+        }
+        
+        let animatedImage = UIImage.animatedImage(with: frames, duration: gifDuration)
+        return animatedImage
     }
 }
