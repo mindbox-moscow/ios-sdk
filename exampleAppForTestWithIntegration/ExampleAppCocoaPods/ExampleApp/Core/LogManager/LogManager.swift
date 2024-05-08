@@ -141,7 +141,7 @@ extension EALogManager {
     func testWriteLogsWithProtection() {
         let fileName = FileNames.fileWithProtection.fileNameWithDate
         
-        let message = #function + "\nisProtectedDataAvailable: \(UIApplication.shared.isProtectedDataAvailable)"
+        let message = #function + "\nisProtectedDataAvailable: \(UIApplication.shared.isProtectedDataAvailable)" + "\nAppState: \(UIApplication.shared.appStateDescription)"
         let timestamp = dateFormatter.string(from: Date())
         let logMessage = "[\(timestamp)] \(message)\n"
         

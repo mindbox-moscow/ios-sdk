@@ -12,6 +12,31 @@ import MindboxLogger
 import Firebase
 import FirebaseCrashlytics
 
+extension UIApplication {
+    var appStateDescription: String {
+        if Thread.isMainThread {
+            return describeApplicationState
+        } else {
+            return DispatchQueue.main.sync {
+                describeApplicationState
+            }
+        }
+    }
+    
+    private var describeApplicationState: String {
+        switch applicationState {
+        case .active:
+            return "active"
+        case .inactive:
+            return "inactive"
+        case .background:
+            return "background"
+        @unknown default:
+            return "unknown"
+        }
+    }
+}
+
 @main
 final class AppDelegate: UIResponder, UIApplicationDelegate {
     
@@ -41,13 +66,6 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
         
         Crashlytics.crashlytics().log("Start \(#function), before MindboxLogger: isProtectedDataAvailable: \(UIApplication.shared.isProtectedDataAvailable)")
         
-        Mindbox.logger.log(level: .info, message: "Test log isProtectedDataAvailable: \(UIApplication.shared.isProtectedDataAvailable)")
-        DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(3)) {
-            for i in 0..<100 {
-                Mindbox.logger.log(level: .debug, message: "Test log \(i) isProtectedDataAvailable: \(UIApplication.shared.isProtectedDataAvailable)")
-            }
-        }
-        
         Crashlytics.crashlytics().setCustomValue(
             UIApplication.shared.isProtectedDataAvailable,
             forKey: "\(#function), after MindboxLogger: isProtectedDataAvailable"
@@ -57,12 +75,14 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
         
         logManager.testWriteLogsWithProtection()
         logManager.log("isProtectedDataAvailable before initMindbox: \(UIApplication.shared.isProtectedDataAvailable)")
+        logManager.log("AppState before initMindbox: \(UIApplication.shared.appStateDescription)")
         logManager.logUserDefaultsMindbox()
         
         UNUserNotificationCenter.current().delegate = self
         
         initMindbox()
         logManager.log("isProtectedDataAvailable after initMindbox: \(UIApplication.shared.isProtectedDataAvailable)")
+        logManager.log("AppState after initMindbox: \(UIApplication.shared.appStateDescription)")
         
         #if DEBUG
         // https://developers.mindbox.ru/docs/ios-sdk-methods#управление-логированием
@@ -88,6 +108,7 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
         logManager.log(#function)
         logManager.testWriteLogsWithProtection()
         logManager.log("isProtectedDataAvailable: \(UIApplication.shared.isProtectedDataAvailable)")
+        logManager.log("AppState: \(UIApplication.shared.appStateDescription)")
         logManager.logUserDefaultsMindbox()
         logManager.log("Finished \(#function)")
         Crashlytics.crashlytics().log("Finished \(#function),: isProtectedDataAvailable: \(UIApplication.shared.isProtectedDataAvailable)")
@@ -97,6 +118,7 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
         logManager.log(#function)
         logManager.testWriteLogsWithProtection()
         logManager.log("isProtectedDataAvailable: \(UIApplication.shared.isProtectedDataAvailable)")
+        logManager.log("AppState: \(UIApplication.shared.appStateDescription)")
         logManager.logUserDefaultsMindbox()
         logManager.log("Finished \(#function)")
         Crashlytics.crashlytics().log("Finished \(#function),: isProtectedDataAvailable: \(UIApplication.shared.isProtectedDataAvailable)")
@@ -312,7 +334,7 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
         }
         
         UNUserNotificationCenter.current()
-            .requestAuthorization(options: [.alert, .badge, .sound, .provisional]) { granted, error in
+            .requestAuthorization(options: [.alert, .badge, .sound]) { granted, error in
                 Mindbox.logger.log(level: .info, message: "Permission granted \(granted)")
                 if let error {
                     Mindbox.logger.log(
