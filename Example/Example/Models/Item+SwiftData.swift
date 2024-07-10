@@ -13,10 +13,19 @@ import SwiftData
 @Model
 public final class Item {
     public var timestamp: Date
-    public var mbPushNotification: MBPushNotification
+    public var title: String
+    public var body: String
     
-    public init(timestamp: Date, pushNotification: MBPushNotification) {
+//    public var mbPushNotification: MBPushNotification
+    
+//    public init(timestamp: Date, pushNotification: MBPushNotification) {
+//        self.timestamp = timestamp
+//        self.mbPushNotification = pushNotification
+//    }
+    
+    public init(timestamp: Date, title: String, body: String) {
         self.timestamp = timestamp
-        self.mbPushNotification = pushNotification
+        self.title = title
+        self.body = body
     }
 }

@@ -19,7 +19,7 @@ class AppDelegate: MindboxAppDelegate {
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
     ) -> Bool {
         super.application(application, didFinishLaunchingWithOptions: launchOptions)
-        
+//        Mindbox.logger.logLevel = .debug
         do {
             let mindboxSdkConfig = try MBConfiguration(
                 //To run the application on a physical device you need to change the endpoint

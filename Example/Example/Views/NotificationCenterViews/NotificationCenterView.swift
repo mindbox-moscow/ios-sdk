@@ -27,14 +27,14 @@ struct NotificationCenterView: View {
                     ZStack {
                         Color.clear
                         HStack {
-                            NotificationCellView(notification: item.mbPushNotification)
+                            NotificationCellView(timestamp: item.timestamp.toString(), title: item.title, bodyStr: item.body)
                             Spacer()
                         }
                     }
                     
                     .contentShape(Rectangle())
                     .onTapGesture {
-                        viewModel.sendOperationNCPushOpen(notification: item.mbPushNotification)
+//                        viewModel.sendOperationNCPushOpen(notification: item.mbPushNotification)
                         if let errorMessage = viewModel.errorMessage {
                             alertMessage = errorMessage
                         } else {
@@ -44,7 +44,7 @@ struct NotificationCenterView: View {
                         UIImpactFeedbackGenerator(style: .soft).impactOccurred()
                     }
                 }
-                .onDelete(perform: deleteItems)
+//                .onDelete(perform: deleteItems)
             }
         }
         .onAppear {
@@ -61,21 +61,21 @@ struct NotificationCenterView: View {
             }
     }
     
-    private func deleteItems(offsets: IndexSet) {
-        withAnimation {
-            let originalOffsets = IndexSet(offsets.map { items.count - 1 - $0 })
-            for index in originalOffsets {
-                let item = items[index]
-                if item.mbPushNotification.clickUrl == "https://mindbox.ru/" {
-                    return
-                } else {
-                    modelContext.delete(items[index])
-                    
-                }
-            }
-        }
-        UIImpactFeedbackGenerator(style: .heavy).impactOccurred()
-    }
+//    private func deleteItems(offsets: IndexSet) {
+//        withAnimation {
+//            let originalOffsets = IndexSet(offsets.map { items.count - 1 - $0 })
+//            for index in originalOffsets {
+//                let item = items[index]
+//                if item.mbPushNotification.clickUrl == "https://mindbox.ru/" {
+//                    return
+//                } else {
+//                    modelContext.delete(items[index])
+//                    
+//                }
+//            }
+//        }
+//        UIImpactFeedbackGenerator(style: .heavy).impactOccurred()
+//    }
 }
 
 #Preview {

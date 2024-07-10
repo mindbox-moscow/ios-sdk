@@ -65,6 +65,6 @@ protocol NotificationCenterViewModelProtocol: AnyObject {
     }
     
     init() {
-        SwiftDataManager.shared.saveMockDataIfNeeded()
+//        SwiftDataManager.shared.saveMockDataIfNeeded()
     }
 }

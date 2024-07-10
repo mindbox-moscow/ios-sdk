@@ -15,9 +15,9 @@ public struct SwiftDataManager {
     public static let shared = SwiftDataManager()
     public var container: ModelContainer
     
-    private var mockDataSaved: Bool {
-        UserDefaults.standard.bool(forKey: "isMockDataSaved")
-    }
+//    private var mockDataSaved: Bool {
+//        UserDefaults.standard.bool(forKey: "isMockDataSaved")
+//    }
     
     private init() {
         let schema = Schema([
@@ -33,37 +33,37 @@ public struct SwiftDataManager {
         }
     }
     
-    public func saveMockDataIfNeeded() {
-        guard !mockDataSaved else {
-            print("MockData already saved")
-            return
-        }
-        Task {
-            await saveMockData()
-        }
-        UserDefaults.standard.set(true, forKey: "isMockDataSaved")
-    }
+//    public func saveMockDataIfNeeded() {
+//        guard !mockDataSaved else {
+//            print("MockData already saved")
+//            return
+//        }
+//        Task {
+//            await saveMockData()
+//        }
+//        UserDefaults.standard.set(true, forKey: "isMockDataSaved")
+//    }
     
-    @MainActor
-    private func saveMockData() {
-        let context = SwiftDataManager.shared.container.mainContext
-        
-        testNotifications.forEach { notification in
-            guard let pushNotification = MBPushNotification(jsonString: notification) else {
-                print("Failed to create MBPushNotification")
-                return
-            }
-            let newItem = Item(timestamp: Date(), pushNotification: pushNotification)
-            
-            context.insert(newItem)
-            
-            do {
-                try context.save()
-            } catch {
-                print("Failed to save context: \(error.localizedDescription)")
-            }
-        }
-    }
+//    @MainActor
+//    private func saveMockData() {
+//        let context = SwiftDataManager.shared.container.mainContext
+//        
+//        testNotifications.forEach { notification in
+//            guard let pushNotification = MBPushNotification(jsonString: notification) else {
+//                print("Failed to create MBPushNotification")
+//                return
+//            }
+//            let newItem = Item(timestamp: Date(), pushNotification: pushNotification)
+//            
+//            context.insert(newItem)
+//            
+//            do {
+//                try context.save()
+//            } catch {
+//                print("Failed to save context: \(error.localizedDescription)")
+//            }
+//        }
+//    }
 }
 
 private extension SwiftDataManager {
