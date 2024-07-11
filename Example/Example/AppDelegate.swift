@@ -19,6 +19,22 @@ class AppDelegate: MindboxAppDelegate {
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
     ) -> Bool {
         super.application(application, didFinishLaunchingWithOptions: launchOptions)
+        LogManager.shared.log(#function)
+        DispatchQueue.main.async {
+            let appState = UIApplication.shared.applicationState
+            let stateDescription: String
+            switch appState {
+            case .active:
+                stateDescription = "active"
+            case .inactive:
+                stateDescription = "inactive"
+            case .background:
+                stateDescription = "background"
+            @unknown default:
+                stateDescription = "unkown"
+            }
+            LogManager.shared.log(stateDescription)
+        }
 //        Mindbox.logger.logLevel = .debug
         do {
             let mindboxSdkConfig = try MBConfiguration(
@@ -53,6 +69,7 @@ class AppDelegate: MindboxAppDelegate {
         willPresent notification: UNNotification,
         withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
     ) {
+        LogManager.shared.log(#function)
         completionHandler([.list, .badge, .sound, .banner])
     }
     
@@ -62,6 +79,7 @@ class AppDelegate: MindboxAppDelegate {
         didReceive response: UNNotificationResponse,
         withCompletionHandler completionHandler: @escaping () -> Void
     ) {
+        LogManager.shared.log(#function)
         //https://developers.mindbox.ru/docs/ios-sdk-methods
         print("Is mindbox notification: \(Mindbox.shared.isMindboxPush(userInfo: response.notification.request.content.userInfo))")
         if let mindboxPushNotification = Mindbox.shared.getMindboxPushData(userInfo: response.notification.request.content.userInfo),
@@ -71,6 +89,31 @@ class AppDelegate: MindboxAppDelegate {
         }
         
         super.userNotificationCenter(center, didReceive: response, withCompletionHandler: completionHandler)
+    }
+    
+    override func application(
+        _ application: UIApplication,
+        didReceiveRemoteNotification userInfo: [AnyHashable : Any],
+        fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void
+    ) {
+        super.application(application, didReceiveRemoteNotification: userInfo, fetchCompletionHandler: completionHandler)
+        LogManager.shared.log(#function)
+        LogManager.shared.log("\(userInfo)")
+        DispatchQueue.main.async {
+            let appState = UIApplication.shared.applicationState
+            let stateDescription: String
+            switch appState {
+            case .active:
+                stateDescription = "active"
+            case .inactive:
+                stateDescription = "inactive"
+            case .background:
+                stateDescription = "background"
+            @unknown default:
+                stateDescription = "unkown"
+            }
+            LogManager.shared.log(stateDescription)
+        }
     }
     
     //https://developers.mindbox.ru/docs/ios-send-push-notifications-appdelegate
