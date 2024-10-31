@@ -115,7 +115,16 @@ private extension MBLogger {
         return OSLogWriter(subsystem: subsystem, category: category.rawValue.capitalized)
     }
 
+    @available(iOS 15.0, *)
+    static let signposter = OSSignposter()
+
     private func writeToCD(message: String, timestamp: Date = Date()) {
+        guard #available(iOS 15.0, *) else { return }
+        
+        let signpostID = Self.signposter.makeSignpostID()
+        let state = Self.signposter.beginInterval(#function, id: signpostID, "Start writing")
         MBLoggerCoreDataManager.shared.create(message: message, timestamp: timestamp)
+        Self.signposter.emitEvent("WriteToCD Event", id: signpostID, "Inside writeToCD")
+        Self.signposter.endInterval(#function, state, "End writing")
     }
 }

@@ -8,16 +8,21 @@
 
 import Mindbox
 import UIKit
+import OSLog
 
 @main
 final class AppDelegate: MindboxAppDelegate {
-    
+
+//    static let pointsOfInterests = OSLog(subsystem: "com.smk.Example", category: .pointsOfInterest)
+
     // https://developers.mindbox.ru/docs/ios-sdk-initialization
     override func application(
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
     ) -> Bool {
         super.application(application, didFinishLaunchingWithOptions: launchOptions)
+
+//        os_signpost(.begin, log: Self.pointsOfInterests, name: "Mindbox Init")
 
         do {
             // To run the application on a physical device you need to change the endpoint
@@ -30,10 +35,13 @@ final class AppDelegate: MindboxAppDelegate {
                 shouldCreateCustomer: true
             )
             Mindbox.shared.initialization(configuration: mindboxSdkConfig)
+//            os_signpost(.event, log: Self.pointsOfInterests, name: "Mindbox Init")
         } catch {
             print(error.localizedDescription)
         }
-        
+
+//        os_signpost(.end, log: Self.pointsOfInterests, name: "Mindbox Init")
+
         // https://developers.mindbox.ru/docs/ios-send-push-notifications-appdelegate
         registerForRemoteNotifications()
         

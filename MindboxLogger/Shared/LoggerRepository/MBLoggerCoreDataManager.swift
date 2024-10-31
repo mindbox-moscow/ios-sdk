@@ -8,9 +8,15 @@
 
 import Foundation
 import CoreData
+import OSLog
 
 public class MBLoggerCoreDataManager {
     public static let shared = MBLoggerCoreDataManager()
+
+//    static let pointsOfInterests = OSLog(subsystem: "com.smk.Example", category: .pointsOfInterest)
+
+    @available(iOS 15.0, *)
+    static let signposter = OSSignposter()
 
     private enum Constants {
         static let model = "CDLogMessage"
@@ -74,13 +80,25 @@ public class MBLoggerCoreDataManager {
 
     // MARK: - CRUD Operations
     public func create(message: String, timestamp: Date, completion: (() -> Void)? = nil) {
+        guard #available(iOS 15.0, *) else { return }
+        
+        let signpostID = Self.signposter.makeSignpostID()
+
+        let state = Self.signposter.beginInterval(#function, id: signpostID, "Start creating")
+
         queue.async {
             do {
+                Self.signposter.emitEvent("Checking for delete condition", id: signpostID)
+
                 let isTimeToDelete = self.writeCount == 0
                 self.writeCount += 1
                 if isTimeToDelete && self.getDBFileSize() > Constants.dbSizeLimitKB {
+                    let deleteState = Self.signposter.beginInterval("Delete Operation", id: signpostID, "Start deleting old entries")
                     try self.delete()
+                    Self.signposter.endInterval("Delete Operation", deleteState, "End deleting old entries")
                 }
+
+                Self.signposter.emitEvent("Core Data Write Operation Started", id: signpostID)
 
                 try self.context.executePerformAndWait {
                     let entity = CDLogMessage(context: self.context)
@@ -88,9 +106,14 @@ public class MBLoggerCoreDataManager {
                     entity.timestamp = timestamp
                     try self.saveEvent(withContext: self.context)
 
+                    Self.signposter.emitEvent("Try saveEvent completed", id: signpostID, "Inside try executePerformAndAwait")
+
                     completion?()
                 }
-            } catch {}
+                Self.signposter.endInterval(#function, state, "End creating")
+            } catch {
+                Self.signposter.endInterval(#function, state, "Error occurred during creation")
+            }
         }
     }
 
