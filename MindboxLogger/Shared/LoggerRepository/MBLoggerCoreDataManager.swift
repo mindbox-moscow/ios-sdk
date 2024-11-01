@@ -18,11 +18,17 @@ public class MBLoggerCoreDataManager {
     @available(iOS 15.0, *)
     static let signposter = OSSignposter()
 
+    @available(iOS 15.0, *)
+    static let signposterFlushBuffer = OSSignposter()
+
     private enum Constants {
         static let model = "CDLogMessage"
         static let dbSizeLimitKB: Int = 10_000
         static let operationLimitBeforeNeedToDelete = 20
+        static let batchSize = 50
     }
+
+    private var logBuffer: [LogMessage] = []
 
     private let queue = DispatchQueue(label: "com.Mindbox.loggerManager", qos: .utility)
     private var persistentStoreDescription: NSPersistentStoreDescription?
@@ -81,38 +87,65 @@ public class MBLoggerCoreDataManager {
     // MARK: - CRUD Operations
     public func create(message: String, timestamp: Date, completion: (() -> Void)? = nil) {
         guard #available(iOS 15.0, *) else { return }
-        
+
         let signpostID = Self.signposter.makeSignpostID()
 
         let state = Self.signposter.beginInterval(#function, id: signpostID, "Start creating")
 
         queue.async {
-            do {
-                Self.signposter.emitEvent("Checking for delete condition", id: signpostID)
+            Self.signposter.emitEvent("Start creating LogMessage for buffer", id: signpostID)
+            self.logBuffer.append(LogMessage(timestamp: timestamp, message: message))
 
-                let isTimeToDelete = self.writeCount == 0
-                self.writeCount += 1
-                if isTimeToDelete && self.getDBFileSize() > Constants.dbSizeLimitKB {
-                    let deleteState = Self.signposter.beginInterval("Delete Operation", id: signpostID, "Start deleting old entries")
-                    try self.delete()
-                    Self.signposter.endInterval("Delete Operation", deleteState, "End deleting old entries")
-                }
+            if self.logBuffer.count >= Constants.batchSize {
+                Self.signposter.emitEvent("Start flushing buffer if logBuffer is full", id: signpostID)
+                self.flushBuffer()
+                Self.signposter.endInterval(#function, state, "End flushing buffer")
+            }
 
-                Self.signposter.emitEvent("Core Data Write Operation Started", id: signpostID)
+            Self.signposter.endInterval(#function, state, "End creating LogMessage for buffer")
+            completion?()
+        }
+    }
 
-                try self.context.executePerformAndWait {
+    private func flushBuffer() {
+        guard #available(iOS 15.0, *) else { return }
+
+        let signpostID = Self.signposterFlushBuffer.makeSignpostID()
+
+        let state = Self.signposterFlushBuffer.beginInterval(#function, id: signpostID, "Start flushing buffer")
+
+        guard !logBuffer.isEmpty else {
+            Self.signposterFlushBuffer.endInterval(#function, state, "LogBuffer isEmpty")
+            return
+        }
+
+        do {
+            try context.executePerformAndWait {
+                for log in self.logBuffer {
+                    Self.signposterFlushBuffer.emitEvent("CDLog creating for context", id: signpostID)
                     let entity = CDLogMessage(context: self.context)
-                    entity.message = message
-                    entity.timestamp = timestamp
-                    try self.saveEvent(withContext: self.context)
-
-                    Self.signposter.emitEvent("Try saveEvent completed", id: signpostID, "Inside try executePerformAndAwait")
-
-                    completion?()
+                    entity.message = log.message
+                    entity.timestamp = log.timestamp
                 }
-                Self.signposter.endInterval(#function, state, "End creating")
+
+                Self.signposterFlushBuffer.emitEvent("Core Data Save Context Operation Started", id: signpostID)
+                try self.saveEvent(withContext: self.context)
+                self.logBuffer.removeAll()
+                self.checkDatabaseSizeAndDeleteIfNeeded()
+                Self.signposterFlushBuffer.endInterval(#function, state, "End flushing buffer")
+            }
+        } catch {
+            print("Failed to flush logs: \(error)")
+            Self.signposterFlushBuffer.endInterval(#function, state, "Error occurred during flushing buffer")
+        }
+    }
+
+    private func checkDatabaseSizeAndDeleteIfNeeded() {
+        if getDBFileSize() > Constants.dbSizeLimitKB {
+            do {
+                try delete()
             } catch {
-                Self.signposter.endInterval(#function, state, "Error occurred during creation")
+                print("Failed to delete logs: \(error)")
             }
         }
     }
