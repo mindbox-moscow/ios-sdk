@@ -25,7 +25,7 @@ public class MBLoggerCoreDataManager {
         static let model = "CDLogMessage"
         static let dbSizeLimitKB: Int = 10_000
         static let operationLimitBeforeNeedToDelete = 20
-        static let batchSize = 50
+        static let batchSize = 10
     }
 
     private var logBuffer: [LogMessage] = []
@@ -85,6 +85,27 @@ public class MBLoggerCoreDataManager {
     }()
 
     // MARK: - CRUD Operations
+//    public func create(message: String, timestamp: Date, completion: (() -> Void)? = nil) {
+//        queue.async {
+//            do {
+//                let isTimeToDelete = self.writeCount == 0
+//                self.writeCount += 1
+//                if isTimeToDelete && self.getDBFileSize() > Constants.dbSizeLimitKB {
+//                    try self.delete()
+//                }
+//
+//                try self.context.executePerformAndWait {
+//                    let entity = CDLogMessage(context: self.context)
+//                    entity.message = message
+//                    entity.timestamp = timestamp
+//                    try self.saveEvent(withContext: self.context)
+//
+//                    completion?()
+//                }
+//            } catch {}
+//        }
+//    }
+
     public func create(message: String, timestamp: Date, completion: (() -> Void)? = nil) {
         guard #available(iOS 15.0, *) else { return }
 
@@ -100,6 +121,8 @@ public class MBLoggerCoreDataManager {
                 Self.signposter.emitEvent("Start flushing buffer if logBuffer is full", id: signpostID)
                 self.flushBuffer()
                 Self.signposter.endInterval(#function, state, "End flushing buffer")
+                completion?()
+                return
             }
 
             Self.signposter.endInterval(#function, state, "End creating LogMessage for buffer")
@@ -119,24 +142,65 @@ public class MBLoggerCoreDataManager {
             return
         }
 
+        if #available(iOS 13.0, *) {
+            // Use NSBatchInsertRequest for iOS 13 and above
+            Self.signposterFlushBuffer.emitEvent("Core Data Insert Batch Operation Started", id: signpostID)
+            performBatchInsert()
+        } else {
+            // Fallback to context-based insertion for iOS 12
+            performContextInsertion()
+        }
+
+        Self.signposterFlushBuffer.endInterval(#function, state, "End flushing buffer")
+        checkDatabaseSizeAndDeleteIfNeeded()
+//
+//        do {
+//            try context.executePerformAndWait {
+//                for log in self.logBuffer {
+//                    Self.signposterFlushBuffer.emitEvent("CDLog creating for context", id: signpostID)
+//                    let entity = CDLogMessage(context: self.context)
+//                    entity.message = log.message
+//                    entity.timestamp = log.timestamp
+//                }
+//
+//                Self.signposterFlushBuffer.emitEvent("Core Data Save Context Operation Started", id: signpostID)
+//                try self.saveEvent(withContext: self.context)
+//                self.logBuffer.removeAll()
+//                self.checkDatabaseSizeAndDeleteIfNeeded()
+//                Self.signposterFlushBuffer.endInterval(#function, state, "End flushing buffer")
+//            }
+//        } catch {
+//            print("Failed to flush logs: \(error)")
+//            Self.signposterFlushBuffer.endInterval(#function, state, "Error occurred during flushing buffer")
+//        }
+    }
+
+    @available(iOS 13.0, *)
+    private func performBatchInsert() {
+        let insertData = logBuffer.map { ["message": $0.message, "timestamp": $0.timestamp] }
+        let insertRequest = NSBatchInsertRequest(entityName: Constants.model, objects: insertData)
+
+        do {
+            try context.execute(insertRequest)
+            logBuffer.removeAll()
+        } catch {
+            print("Failed to batch insert logs: \(error)")
+        }
+    }
+
+    private func performContextInsertion() {
         do {
             try context.executePerformAndWait {
                 for log in self.logBuffer {
-                    Self.signposterFlushBuffer.emitEvent("CDLog creating for context", id: signpostID)
                     let entity = CDLogMessage(context: self.context)
                     entity.message = log.message
                     entity.timestamp = log.timestamp
                 }
-
-                Self.signposterFlushBuffer.emitEvent("Core Data Save Context Operation Started", id: signpostID)
                 try self.saveEvent(withContext: self.context)
                 self.logBuffer.removeAll()
-                self.checkDatabaseSizeAndDeleteIfNeeded()
-                Self.signposterFlushBuffer.endInterval(#function, state, "End flushing buffer")
             }
         } catch {
             print("Failed to flush logs: \(error)")
-            Self.signposterFlushBuffer.endInterval(#function, state, "Error occurred during flushing buffer")
         }
     }
 
