@@ -66,8 +66,8 @@ jobs:
     - name: Check available disk space
       run: df -h
 
-    - name: Run unit tests
-      run: bundle exec fastlane unitTestLane
+#    - name: Run unit tests
+#      run: bundle exec fastlane unitTestLane
 
 
     - name: Run unit tests directly
