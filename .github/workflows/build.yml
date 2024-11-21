@@ -41,6 +41,9 @@ jobs:
     - name: Update Fastlane
       run: bundle update fastlane
 
+    - name: Check Fastlane scan parameters
+      run: bundle exec fastlane action scan
+
 #    - name: List available simulators
 #      run: xcrun simctl list
 #
