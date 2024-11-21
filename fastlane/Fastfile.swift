@@ -27,8 +27,9 @@ class Fastfile: LaneFile {
              testWithoutBuilding: .userDefined(false),
              xcargs: "CI=true CODE_SIGNING_ALLOWED=NO",
              includeSimulatorLogs: true,
-             reset_simulator: true
-//             force_quit_simulator: true
+             resetSimulator: true,
+             forceQuitSimulator: true,
+             prelaunchSimulator: true
         )
     }
 }
