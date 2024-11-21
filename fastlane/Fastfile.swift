@@ -18,13 +18,13 @@ class Fastfile: LaneFile {
     func unitTestLane() {
         desc("Run unit tests")
         gym(
-            project: project, // Используем gym для сборки
+            project: .userDefined(project), // Используем gym для сборки
             scheme: "Mindbox",
             clean: true,
             xcargs: "CI=true CODE_SIGNING_ALLOWED=NO"
         )
         scan(
-            project: project,
+            project: .userDefined(project),
             scheme: "Mindbox",
             onlyTesting: ["MindboxTests"],
             skipBuild: true, // Пропускаем сборку перед тестами
