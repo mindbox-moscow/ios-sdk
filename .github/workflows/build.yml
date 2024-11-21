@@ -20,7 +20,7 @@ jobs:
         args: --config .swiftlint.yml
 
   build:
-    runs-on: macos-latest
+    runs-on: macos-15
     timeout-minutes: 15
     steps:
     - uses: actions/checkout@v4
@@ -66,19 +66,16 @@ jobs:
     - name: Check available disk space
       run: df -h
 
-    - name: Check simctl list
-      run: xcrun simctl list
-
-#    - name: Run unit tests
-#      run: bundle exec fastlane unitTestLane
+    - name: Run unit tests
+      run: bundle exec fastlane unitTestLane
 
 
-    - name: Run unit tests directly
-      run: |
-        set -o pipefail && xcodebuild test \
-          -project Mindbox.xcodeproj \
-          -scheme Mindbox \
-          -destination 'platform=iOS Simulator,name=iPhone SE (3rd generation),OS=18.1' \
-          -only-testing:MindboxTests \
-          CODE_SIGNING_ALLOWED=NO \
-          | xcpretty
+#    - name: Run unit tests directly
+#      run: |
+#        set -o pipefail && xcodebuild test \
+#          -project Mindbox.xcodeproj \
+#          -scheme Mindbox \
+#          -destination 'platform=iOS Simulator,name=iPhone SE (3rd generation),OS=18.1' \
+#          -only-testing:MindboxTests \
+#          CODE_SIGNING_ALLOWED=NO \
+#          | xcpretty
