@@ -50,5 +50,11 @@ jobs:
 #    - name: Shutdown simulator
 #      run: xcrun simctl shutdown all
 
+#    - name: Shutdown all simulators
+#      run: xcrun simctl shutdown all
+#
+#    - name: Erase all simulators
+#      run: xcrun simctl erase all
+
     - name: Run unit tests
       run: bundle exec fastlane unitTestLane

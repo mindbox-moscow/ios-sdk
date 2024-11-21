@@ -19,13 +19,17 @@ class Fastfile: LaneFile {
         desc("Run unit tests")
         scan(project: .userDefined(project),
              scheme: "Mindbox",
-//             destination: "platform=iOS Simulator",
+             destination: "platform=iOS Simulator,name=iPhone SE (3rd generation),OS=18.1",
              onlyTesting: ["MindboxTests"],
              clean: true,
              xcodebuildFormatter: "xcpretty",
              disableConcurrentTesting: true,
              testWithoutBuilding: .userDefined(false),
-             xcargs: "CI=true CODE_SIGNING_ALLOWED=NO"
+             xcargs: "CI=true CODE_SIGNING_ALLOWED=NO",
+             verbose: true,
+             includeSimulatorLogs: true,
+//             reset_simulator: true,
+             force_quit_simulator: true
         )
     }
 }
