@@ -41,11 +41,14 @@ jobs:
     - name: Update Fastlane
       run: bundle update fastlane
 
-    - name: List available simulators
-      run: xcrun simctl list
+#    - name: List available simulators
+#      run: xcrun simctl list
+#
+#    - name: Boot simulator
+#      run: xcrun simctl boot "iPhone SE (3rd generation)"
+#
+#    - name: Shutdown simulator
+#      run: xcrun simctl shutdown all
 
-    - name: Boot simulator
-      run: xcrun simctl boot "iPhone SE (3rd generation)"
-      
     - name: Run unit tests
       run: bundle exec fastlane unitTestLane
