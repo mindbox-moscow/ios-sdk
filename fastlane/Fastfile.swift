@@ -19,11 +19,11 @@ class Fastfile: LaneFile {
         desc("Run unit tests")
         scan(project: .userDefined(project),
              scheme: "Mindbox",
-             clean: true,
-             testWithoutBuilding: .userDefined(false),
              forceQuitSimulator: .userDefined(true),
              resetSimulator: .userDefined(true),
              prelaunchSimulator: .userDefined(true),
+             clean: true,
+             testWithoutBuilding: .userDefined(false),
              onlyTesting: ["MindboxTests"],
              disableConcurrentTesting: true,
              includeSimulatorLogs: true,
