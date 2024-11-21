@@ -20,17 +20,17 @@ class Fastfile: LaneFile {
         scan(project: .userDefined(project),
              scheme: "Mindbox",
 //             forceQuitSimulator: .userDefined(true),
-             resetSimulator: .userDefined(true),
+//             resetSimulator: .userDefined(true),
 //             prelaunchSimulator: .userDefined(true),
              onlyTesting: ["MindboxTests"],
              clean: true,
 //             includeSimulatorLogs: true,
-             xcodebuildFormatter: "xcpretty",
+//             xcodebuildFormatter: "xcpretty",
              disableConcurrentTesting: true,
              testWithoutBuilding: .userDefined(false),
              xcargs: "CI=true CODE_SIGNING_ALLOWED=NO",
              destination: "platform=iOS Simulator,name=iPhone SE (3rd generation),OS=18.1",
-             numberOfRetries: 3
+//             numberOfRetries: 3
         )
     }
 }
