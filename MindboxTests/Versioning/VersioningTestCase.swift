@@ -55,7 +55,7 @@ class VersioningTestCase: XCTestCase {
 //                let events = try self.container.databaseRepository.query(fetchLimit: infoUpdateLimit)
                 let events = try self.databaseRepository.query(fetchLimit: infoUpdateLimit)
                 events.forEach({
-                    XCTAssertTrue($0.type == .infoUpdated)
+                    XCTAssertTrue($0.type == .infoUpdated, "Event type mismatch")
                 })
                 events
                     .sorted { $0.dateTimeOffset > $1.dateTimeOffset }
@@ -63,11 +63,11 @@ class VersioningTestCase: XCTestCase {
                     .enumerated()
                     .makeIterator()
                     .forEach { offset, element in
-                        XCTAssertTrue(offset + 1 == element.version, "Element version is \(element.version). Current element is \(offset + 1). Are they equal? \(offset + 1 == element.version)")
+                        XCTAssertEqual(offset + 1, element.version, "Version mismatch at offset \(offset + 1)")
                     }
                 inspectVersionsExpectation.fulfill()
             } catch {
-                XCTFail(error.localizedDescription)
+                XCTFail("Error querying events: \(error.localizedDescription)")
             }
         }
 
@@ -123,18 +123,19 @@ class VersioningTestCase: XCTestCase {
     }
 
     private func makeMockAsyncCall(limit: Int, mockSDKCall: @escaping ((Int) -> Void)) {
-        (1 ... limit)
-            .map { index in
-                DispatchWorkItem {
-                    mockSDKCall(index)
-                }
+
+        let dispatchGroup = DispatchGroup()
+
+        (1...limit).forEach { index in
+            dispatchGroup.enter()
+            let queue = DispatchQueue(label: "com.Mindbox.testInfoUpdateVersioning-\(index)", attributes: .concurrent)
+            queues.append(queue)
+            queue.async {
+                mockSDKCall(index)
+                dispatchGroup.leave()
             }
-            .enumerated()
-            .makeIterator()
-            .forEach { index, workItem in
-                let queue = DispatchQueue(label: "com.Mindbox.testInfoUpdateVersioning-\(index)", attributes: .concurrent)
-                queues.append(queue)
-                queue.async(execute: workItem)
-            }
+        }
+
+        dispatchGroup.wait()
     }
 }
