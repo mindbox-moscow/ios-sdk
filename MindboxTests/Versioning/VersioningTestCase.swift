@@ -36,6 +36,7 @@ class VersioningTestCase: XCTestCase {
         persistenceStorage = nil
         databaseRepository = nil
         guaranteedDeliveryManager = nil
+        queues.removeAll()
         super.tearDown()
     }
 
