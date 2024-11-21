@@ -32,6 +32,13 @@ class VersioningTestCase: XCTestCase {
         // Put setup code here. This method is called before the invocation of each test method in the class.
     }
 
+    override func tearDown() {
+        persistenceStorage = nil
+        databaseRepository = nil
+        guaranteedDeliveryManager = nil
+        super.tearDown()
+    }
+
     func testInfoUpdateVersioningByAPNSToken() {
         let inspectVersionsExpectation = expectation(description: "InspectVersion")
         initConfiguration()
@@ -43,7 +50,7 @@ class VersioningTestCase: XCTestCase {
             Mindbox.shared.apnsTokenUpdate(deviceToken: deviceToken)
         }
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(1)) {
             do {
 //                let events = try self.container.databaseRepository.query(fetchLimit: infoUpdateLimit)
                 let events = try self.databaseRepository.query(fetchLimit: infoUpdateLimit)
@@ -74,13 +81,13 @@ class VersioningTestCase: XCTestCase {
         guaranteedDeliveryManager.canScheduleOperations = false
         let infoUpdateLimit = 50
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(1)) {
             self.makeMockAsyncCall(limit: infoUpdateLimit) { index in
                 Mindbox.shared.notificationsRequestAuthorization(granted: index % 2 == 0)
             }
         }
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + 5.0) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(2)) {
             do {
 //                let events = try self.container.databaseRepository.query(fetchLimit: infoUpdateLimit)
                 let events = try self.databaseRepository.query(fetchLimit: infoUpdateLimit)
@@ -101,7 +108,7 @@ class VersioningTestCase: XCTestCase {
             }
         }
 
-        waitForExpectations(timeout: 60, handler: nil)
+        waitForExpectations(timeout: 5, handler: nil)
     }
 
     private func initConfiguration() {
