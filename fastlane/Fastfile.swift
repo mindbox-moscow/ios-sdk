@@ -28,7 +28,8 @@ class Fastfile: LaneFile {
              xcodebuildFormatter: "xcpretty",
              disableConcurrentTesting: true,
              testWithoutBuilding: .userDefined(false),
-             xcargs: "CI=true CODE_SIGNING_ALLOWED=NO",
+             xcargs: "CI=true CODE_SIGNING_ALLOWED=NO COMPILER_INDEX_STORE_ENABLE=NO SWIFT_COMPILATION_MODE=singlefile",
+             destination: "platform=iOS Simulator,name=iPhone SE (3rd generation),OS=18.1",
              numberOfRetries: 3
         )
     }

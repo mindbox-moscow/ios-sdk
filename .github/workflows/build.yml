@@ -61,3 +61,14 @@ jobs:
 
     - name: Run unit tests
       run: bundle exec fastlane unitTestLane
+
+
+    - name: Run unit tests directly
+      run: |
+        set -o pipefail && xcodebuild test \
+          -project Mindbox.xcodeproj \
+          -scheme Mindbox \
+          -destination 'platform=iOS Simulator,name=iPhone SE (3rd generation),OS=17.0' \
+          -only-testing:MindboxTests \
+          CODE_SIGNING_ALLOWED=NO \
+          | xcpretty
