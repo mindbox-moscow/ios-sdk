@@ -23,7 +23,7 @@ class Fastfile: LaneFile {
 //             resetSimulator: .userDefined(true),
              prelaunchSimulator: .userDefined(true),
              onlyTesting: ["MindboxTests"],
-//             clean: true,
+             clean: true,
 //             includeSimulatorLogs: true,
              xcodebuildFormatter: "xcpretty",
              disableConcurrentTesting: true,
