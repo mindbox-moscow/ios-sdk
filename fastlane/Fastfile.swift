@@ -21,7 +21,7 @@ class Fastfile: LaneFile {
              scheme: "Mindbox",
 //             forceQuitSimulator: .userDefined(true),
 //             resetSimulator: .userDefined(true),
-             prelaunchSimulator: .userDefined(true),
+//             prelaunchSimulator: .userDefined(true),
              onlyTesting: ["MindboxTests"],
              clean: true,
 //             includeSimulatorLogs: true,
