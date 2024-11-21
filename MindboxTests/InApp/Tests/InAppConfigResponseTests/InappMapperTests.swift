@@ -38,6 +38,7 @@ class InappMapperTests: XCTestCase {
         mockDataFacade = nil
         targetingChecker = nil
         mapper = nil
+        persistenceStorage = nil
         super.tearDown()
     }
 
