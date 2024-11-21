@@ -27,9 +27,9 @@ class Fastfile: LaneFile {
             project: .userDefined(project),
             scheme: "Mindbox",
             onlyTesting: ["MindboxTests"],
-            skipBuild: true, // Пропускаем сборку перед тестами
-            clean: false,    // clean перед skipBuild
+            clean: false,
             xcodebuildFormatter: "xcpretty",
+            skipBuild: true,
             xcargs: "CI=true CODE_SIGNING_ALLOWED=NO"
         )
     }
