@@ -15,13 +15,16 @@ class VersioningTestCase: XCTestCase {
     private var queues: [DispatchQueue] = []
 
     var persistenceStorage: PersistenceStorage!
+    var databaseRepository: MBDatabaseRepository!
+    var guaranteedDeliveryManager: GuaranteedDeliveryManager!
 
     override func setUp() {
         super.setUp()
         persistenceStorage = DI.injectOrFail(PersistenceStorage.self)
         persistenceStorage.reset()
-        let databaseRepository = DI.injectOrFail(MBDatabaseRepository.self)
+        databaseRepository = DI.injectOrFail(MBDatabaseRepository.self)
         try! databaseRepository.erase()
+        guaranteedDeliveryManager = DI.injectOrFail(GuaranteedDeliveryManager.self)
         Mindbox.shared.assembly()
         let timer = DI.injectOrFail(TimerManager.self)
         timer.invalidate()
@@ -30,71 +33,75 @@ class VersioningTestCase: XCTestCase {
     }
 
     func testInfoUpdateVersioningByAPNSToken() {
-//        let inspectVersionsExpectation = expectation(description: "InspectVersion")
-//        initConfiguration()
+        let inspectVersionsExpectation = expectation(description: "InspectVersion")
+        initConfiguration()
 //        container.guaranteedDeliveryManager.canScheduleOperations = false
-//        let infoUpdateLimit = 50
-//        makeMockAsyncCall(limit: infoUpdateLimit) { _ in
-//            let deviceToken = APNSTokenGenerator().generate()
-//            Mindbox.shared.apnsTokenUpdate(deviceToken: deviceToken)
-//        }
-//
-//        DispatchQueue.main.asyncAfter(deadline: .now() + 10) {
-//            do {
+        guaranteedDeliveryManager.canScheduleOperations = false
+        let infoUpdateLimit = 50
+        makeMockAsyncCall(limit: infoUpdateLimit) { _ in
+            let deviceToken = APNSTokenGenerator().generate()
+            Mindbox.shared.apnsTokenUpdate(deviceToken: deviceToken)
+        }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+            do {
 //                let events = try self.container.databaseRepository.query(fetchLimit: infoUpdateLimit)
-//                events.forEach({
-//                    XCTAssertTrue($0.type == .infoUpdated)
-//                })
-//                events
-//                    .sorted { $0.dateTimeOffset > $1.dateTimeOffset }
-//                    .compactMap { BodyDecoder<MobileApplicationInfoUpdated>(decodable: $0.body)?.body }
-//                    .enumerated()
-//                    .makeIterator()
-//                    .forEach { offset, element in
-//                        XCTAssertTrue(offset + 1 == element.version, "Element version is \(element.version). Current element is \(offset + 1). Are they equal? \(offset + 1 == element.version)")
-//                    }
-//                inspectVersionsExpectation.fulfill()
-//            } catch {
-//                XCTFail(error.localizedDescription)
-//            }
-//        }
-//
-//        waitForExpectations(timeout: 30, handler: nil)
+                let events = try self.databaseRepository.query(fetchLimit: infoUpdateLimit)
+                events.forEach({
+                    XCTAssertTrue($0.type == .infoUpdated)
+                })
+                events
+                    .sorted { $0.dateTimeOffset > $1.dateTimeOffset }
+                    .compactMap { BodyDecoder<MobileApplicationInfoUpdated>(decodable: $0.body)?.body }
+                    .enumerated()
+                    .makeIterator()
+                    .forEach { offset, element in
+                        XCTAssertTrue(offset + 1 == element.version, "Element version is \(element.version). Current element is \(offset + 1). Are they equal? \(offset + 1 == element.version)")
+                    }
+                inspectVersionsExpectation.fulfill()
+            } catch {
+                XCTFail(error.localizedDescription)
+            }
+        }
+
+        waitForExpectations(timeout: 3, handler: nil)
     }
 
     func testInfoUpdateVersioningByRequestAuthorization() {
-//        let inspectVersionsExpectation = expectation(description: "InspectVersion")
-//        initConfiguration()
+        let inspectVersionsExpectation = expectation(description: "InspectVersion")
+        initConfiguration()
 //        container.guaranteedDeliveryManager.canScheduleOperations = false
-//        let infoUpdateLimit = 50
-//
-//        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-//            self.makeMockAsyncCall(limit: infoUpdateLimit) { index in
-//                Mindbox.shared.notificationsRequestAuthorization(granted: index % 2 == 0)
-//            }
-//        }
-//
-//        DispatchQueue.main.asyncAfter(deadline: .now() + 5.0) {
-//            do {
+        guaranteedDeliveryManager.canScheduleOperations = false
+        let infoUpdateLimit = 50
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+            self.makeMockAsyncCall(limit: infoUpdateLimit) { index in
+                Mindbox.shared.notificationsRequestAuthorization(granted: index % 2 == 0)
+            }
+        }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 5.0) {
+            do {
 //                let events = try self.container.databaseRepository.query(fetchLimit: infoUpdateLimit)
-//                events.forEach({
-//                    XCTAssertTrue($0.type == .infoUpdated)
-//                })
-//                events
-//                    .sorted { $0.dateTimeOffset > $1.dateTimeOffset }
-//                    .compactMap { BodyDecoder<MobileApplicationInfoUpdated>(decodable: $0.body)?.body }
-//                    .enumerated()
-//                    .makeIterator()
-//                    .forEach { offset, element in
-//                        XCTAssertTrue(offset + 1 == element.version, "Element version is \(element.version). Current element is \(offset + 1). Are they equal? \(offset + 1 == element.version)")
-//                    }
-//                inspectVersionsExpectation.fulfill()
-//            } catch {
-//                XCTFail(error.localizedDescription)
-//            }
-//        }
-//
-//        waitForExpectations(timeout: 60, handler: nil)
+                let events = try self.databaseRepository.query(fetchLimit: infoUpdateLimit)
+                events.forEach({
+                    XCTAssertTrue($0.type == .infoUpdated)
+                })
+                events
+                    .sorted { $0.dateTimeOffset > $1.dateTimeOffset }
+                    .compactMap { BodyDecoder<MobileApplicationInfoUpdated>(decodable: $0.body)?.body }
+                    .enumerated()
+                    .makeIterator()
+                    .forEach { offset, element in
+                        XCTAssertTrue(offset + 1 == element.version, "Element version is \(element.version). Current element is \(offset + 1). Are they equal? \(offset + 1 == element.version)")
+                    }
+                inspectVersionsExpectation.fulfill()
+            } catch {
+                XCTFail(error.localizedDescription)
+            }
+        }
+
+        waitForExpectations(timeout: 60, handler: nil)
     }
 
     private func initConfiguration() {
