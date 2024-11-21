@@ -29,7 +29,7 @@ class Fastfile: LaneFile {
              disableConcurrentTesting: true,
              testWithoutBuilding: .userDefined(false),
              xcargs: "CI=true CODE_SIGNING_ALLOWED=NO",
-             destination: "platform=iOS Simulator,name=iPhone SE (3rd generation),OS=18.1"
+             numberOfRetries: 3
         )
     }
 }
