@@ -17,8 +17,8 @@ class Fastfile: LaneFile {
 
     func unitTestLane() {
         desc("Run unit tests")
-        build_app(
-            project: project,
+        gym(
+            project: project, // Используем gym для сборки
             scheme: "Mindbox",
             clean: true,
             xcargs: "CI=true CODE_SIGNING_ALLOWED=NO"
@@ -27,8 +27,8 @@ class Fastfile: LaneFile {
             project: project,
             scheme: "Mindbox",
             onlyTesting: ["MindboxTests"],
-            skipBuild: true,
-            clean: false,
+            skipBuild: true, // Пропускаем сборку перед тестами
+            clean: false,    // clean перед skipBuild
             xcodebuildFormatter: "xcpretty",
             xcargs: "CI=true CODE_SIGNING_ALLOWED=NO"
         )

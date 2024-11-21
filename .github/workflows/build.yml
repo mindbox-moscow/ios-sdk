@@ -41,8 +41,8 @@ jobs:
     - name: Update Fastlane
       run: bundle update fastlane
 
-    - name: Check Fastlane scan parameters
-      run: bundle exec fastlane action scan
+#    - name: Check Fastlane scan parameters
+#      run: bundle exec fastlane action scan
 
 #    - name: List available simulators
 #      run: xcrun simctl list
@@ -59,7 +59,9 @@ jobs:
 #    - name: Erase all simulators
 #      run: xcrun simctl erase all
 
-    - name: Monitor resource usage
+    - name: Check CPU usage
+      run: top -l 1 -s 0 | grep "CPU usage"
+    - name: Check memory usage
       run: top -l 1 -s 0 | grep PhysMem
 
     - name: Run unit tests
