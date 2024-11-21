@@ -17,20 +17,20 @@ class Fastfile: LaneFile {
 
     func unitTestLane() {
         desc("Run unit tests")
-        scan(project: .userDefined(project),
-             scheme: "Mindbox",
-             forceQuitSimulator: .userDefined(true),
-             resetSimulator: .userDefined(true),
-             prelaunchSimulator: .userDefined(true),
-             onlyTesting: ["MindboxTests"],
-             clean: true,
-             includeSimulatorLogs: true,
-             xcodebuildFormatter: "xcpretty",
-             disableConcurrentTesting: true,
-             testWithoutBuilding: .userDefined(false),
-             xcargs: "CI=true CODE_SIGNING_ALLOWED=NO COMPILER_INDEX_STORE_ENABLE=NO SWIFT_COMPILATION_MODE=singlefile",
-             destination: "platform=iOS Simulator,name=iPhone SE (3rd generation),OS=18.1",
-             numberOfRetries: 3
+        build_app(
+            project: project,
+            scheme: "Mindbox",
+            clean: true,
+            xcargs: "CI=true CODE_SIGNING_ALLOWED=NO"
+        )
+        scan(
+            project: project,
+            scheme: "Mindbox",
+            onlyTesting: ["MindboxTests"],
+            skipBuild: true,
+            clean: false,
+            xcodebuildFormatter: "xcpretty",
+            xcargs: "CI=true CODE_SIGNING_ALLOWED=NO"
         )
     }
 }

@@ -59,6 +59,9 @@ jobs:
 #    - name: Erase all simulators
 #      run: xcrun simctl erase all
 
+    - name: Monitor resource usage
+      run: top -l 1 -s 0 | grep PhysMem
+
     - name: Run unit tests
       run: bundle exec fastlane unitTestLane
 
