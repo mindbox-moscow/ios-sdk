@@ -25,9 +25,9 @@ class Fastfile: LaneFile {
              onlyTesting: ["MindboxTests"],
              clean: true,
              includeSimulatorLogs: true,
-             testWithoutBuilding: .userDefined(false),
-             disableConcurrentTesting: true,
              xcodebuildFormatter: "xcpretty",
+             disableConcurrentTesting: true,
+             testWithoutBuilding: .userDefined(false),
              xcargs: "CI=true CODE_SIGNING_ALLOWED=NO",
              destination: "platform=iOS Simulator,name=iPhone SE (3rd generation),OS=18.1"
         )
