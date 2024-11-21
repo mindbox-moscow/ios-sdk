@@ -38,8 +38,8 @@ jobs:
 #          sudo installer -pkg yeetd-normal.pkg -target /
 #          yeetd &
 
-    - name: Update Fastlane
-      run: bundle update fastlane
+#    - name: Update Fastlane
+#      run: bundle update fastlane
 
 #    - name: Check Fastlane scan parameters
 #      run: bundle exec fastlane action scan
