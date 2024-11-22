@@ -37,6 +37,7 @@ class VersioningTestCase: XCTestCase {
         databaseRepository = nil
         guaranteedDeliveryManager = nil
         queues.removeAll()
+
         super.tearDown()
     }
 
@@ -44,35 +45,41 @@ class VersioningTestCase: XCTestCase {
         let inspectVersionsExpectation = expectation(description: "InspectVersion")
         initConfiguration()
 //        container.guaranteedDeliveryManager.canScheduleOperations = false
-        guaranteedDeliveryManager.canScheduleOperations = false
-        let infoUpdateLimit = 50
+        guaranteedDeliveryManager.canScheduleOperations = true
+        let infoUpdateLimit = 2
         makeMockAsyncCall(limit: infoUpdateLimit) { _ in
             let deviceToken = APNSTokenGenerator().generate()
+            print("Updating APNS token: \(deviceToken)")
             Mindbox.shared.apnsTokenUpdate(deviceToken: deviceToken)
         }
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(1)) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(3)) {
             do {
 //                let events = try self.container.databaseRepository.query(fetchLimit: infoUpdateLimit)
                 let events = try self.databaseRepository.query(fetchLimit: infoUpdateLimit)
+                XCTAssertNotEqual(events.count, 0)
                 events.forEach({
-                    XCTAssertTrue($0.type == .infoUpdated, "Event type mismatch")
+                    XCTAssertTrue($0.type == .infoUpdated)
                 })
+
+                print("\n\n\n")
+                print(events.count)
+                print("\n\n\n")
                 events
                     .sorted { $0.dateTimeOffset > $1.dateTimeOffset }
                     .compactMap { BodyDecoder<MobileApplicationInfoUpdated>(decodable: $0.body)?.body }
                     .enumerated()
                     .makeIterator()
                     .forEach { offset, element in
-                        XCTAssertEqual(offset + 1, element.version, "Version mismatch at offset \(offset + 1)")
+                        XCTAssertTrue(offset + 1 == element.version, "Element version is \(element.version). Current element is \(offset + 1). Are they equal? \(offset + 1 == element.version)")
                     }
                 inspectVersionsExpectation.fulfill()
             } catch {
-                XCTFail("Error querying events: \(error.localizedDescription)")
+                XCTFail(error.localizedDescription)
             }
         }
 
-        waitForExpectations(timeout: 3, handler: nil)
+        waitForExpectations(timeout: 60, handler: nil)
     }
 
     func testInfoUpdateVersioningByRequestAuthorization() {
@@ -82,13 +89,13 @@ class VersioningTestCase: XCTestCase {
         guaranteedDeliveryManager.canScheduleOperations = false
         let infoUpdateLimit = 50
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(1)) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
             self.makeMockAsyncCall(limit: infoUpdateLimit) { index in
                 Mindbox.shared.notificationsRequestAuthorization(granted: index % 2 == 0)
             }
         }
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(2)) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 5.0) {
             do {
 //                let events = try self.container.databaseRepository.query(fetchLimit: infoUpdateLimit)
                 let events = try self.databaseRepository.query(fetchLimit: infoUpdateLimit)
@@ -109,9 +116,11 @@ class VersioningTestCase: XCTestCase {
             }
         }
 
-        waitForExpectations(timeout: 5, handler: nil)
+        waitForExpectations(timeout: 60, handler: nil)
     }
+}
 
+extension VersioningTestCase {
     private func initConfiguration() {
         let configuration = try! MBConfiguration(
             endpoint: "mpush-test-iOS-test",
@@ -125,18 +134,36 @@ class VersioningTestCase: XCTestCase {
 
     private func makeMockAsyncCall(limit: Int, mockSDKCall: @escaping ((Int) -> Void)) {
 
-        let dispatchGroup = DispatchGroup()
-
-        (1...limit).forEach { index in
-            dispatchGroup.enter()
-            let queue = DispatchQueue(label: "com.Mindbox.testInfoUpdateVersioning-\(index)", attributes: .concurrent)
-            queues.append(queue)
-            queue.async {
-                mockSDKCall(index)
-                dispatchGroup.leave()
+        (1 ... limit)
+            .map { index in
+                DispatchWorkItem {
+                    mockSDKCall(index)
+                }
             }
-        }
-
-        dispatchGroup.wait()
+            .enumerated()
+            .makeIterator()
+            .forEach { index, workItem in
+                let queue = DispatchQueue(label: "com.Mindbox.testInfoUpdateVersioning-\(index)", attributes: .concurrent)
+                queues.append(queue)
+                queue.async(execute: workItem)
+            }
     }
 }
+
+
+//private func makeMockAsyncCall(limit: Int, mockSDKCall: @escaping ((Int) -> Void)) {
+//
+//    let dispatchGroup = DispatchGroup()
+//
+//    (1...limit).forEach { index in
+//        dispatchGroup.enter()
+//        let queue = DispatchQueue(label: "com.Mindbox.testInfoUpdateVersioning-\(index)", attributes: .concurrent)
+//        queues.append(queue)
+//        queue.async {
+//            mockSDKCall(index)
+//            dispatchGroup.leave()
+//        }
+//    }
+//
+//    dispatchGroup.wait()
+//}

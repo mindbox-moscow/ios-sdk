@@ -20,7 +20,7 @@ jobs:
         args: --config .swiftlint.yml
 
   build:
-    runs-on: macos-13
+    runs-on: macos-15
     timeout-minutes: 30
     steps:
     - uses: actions/checkout@v4
@@ -65,6 +65,17 @@ jobs:
       run: top -l 1 -s 0 | grep PhysMem
     - name: Check available disk space
       run: df -h
+
+    - name: Build SDK without code signing
+      run: |
+        set -o pipefail && xcodebuild build \
+          -project Mindbox.xcodeproj \
+          -scheme Mindbox \
+          -destination 'platform=iOS Simulator,name=iPhone SE (3rd generation),OS=latest' \
+          CODE_SIGNING_ALLOWED=NO
+
+    - name: Build SDK
+      run: bundle exec fastlane buildLane
 
     - name: Run unit tests
       run: bundle exec fastlane unitTestLane
