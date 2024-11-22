@@ -139,24 +139,29 @@ class DatabaseRepositoryTestCase: XCTestCase {
         testCreateEvent()
     }
 
-    func testLimitCount() {
-//        try! databaseRepository.erase()
-////        (databaseRepository as! MockDatabaseRepository).tempLimit = 3
-//        let events = eventGenerator.generateEvents(count: databaseRepository.limit)
-//        do {
-//            try events.forEach {
-//                try databaseRepository.create(event: $0)
-//            }
-//        } catch {
-//            XCTFail(error.localizedDescription)
-//        }
-//
-//        do {
-//            let totalEvents = try self.databaseRepository.countEvents()
+    func testCleanUpWhenTryCountEvents() {
+        try! databaseRepository.erase()
+//        (databaseRepository as! MockDatabaseRepository).tempLimit = 3
+        let events = eventGenerator.generateEvents(count: databaseRepository.limit * 2)
+        do {
+            try events.forEach {
+                try databaseRepository.create(event: $0)
+            }
+        } catch {
+            XCTFail(error.localizedDescription)
+        }
+
+        do {
+            let eventsBeforeCleanUp = try self.databaseRepository.countEvents()
+            XCTAssertEqual(eventsBeforeCleanUp, databaseRepository.limit * 2)
+
+            let totalEventsAfterCleanUp = try self.databaseRepository.countEvents()
+            XCTAssertEqual(totalEventsAfterCleanUp, databaseRepository.limit)
 //            XCTAssertTrue(totalEvents <= databaseRepository.limit)
-//        } catch {
-//            XCTFail(error.localizedDescription)
-//        }
+            XCTAssertLessThanOrEqual(totalEventsAfterCleanUp, databaseRepository.limit)
+        } catch {
+            XCTFail(error.localizedDescription)
+        }
     }
 
     func testLifeTimeLimit() {
