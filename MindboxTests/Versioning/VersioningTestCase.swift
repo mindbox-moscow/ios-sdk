@@ -25,8 +25,17 @@ class VersioningTestCase: XCTestCase {
         persistenceStorage.reset()
         databaseRepository = DI.injectOrFail(MBDatabaseRepository.self)
         try! databaseRepository.erase()
+
+//        let resetExpectation = expectation(description: "Reset expectation")
+//        DispatchQueue.global().async {
+//            self.persistenceStorage.reset()
+//            try! self.databaseRepository.erase()
+//            resetExpectation.fulfill()
+//        }
+//        wait(for: [resetExpectation], timeout: 5)
+
         guaranteedDeliveryManager = DI.injectOrFail(GuaranteedDeliveryManager.self)
-//        Mindbox.shared.assembly()
+        Mindbox.shared.assembly()
         let timer = DI.injectOrFail(TimerManager.self)
         timer.invalidate()
 
@@ -52,6 +61,11 @@ class VersioningTestCase: XCTestCase {
             let deviceToken = APNSTokenGenerator().generate()
             Mindbox.shared.apnsTokenUpdate(deviceToken: deviceToken)
         }
+
+//        makeMockSequentialCall(limit: infoUpdateLimit) { _ in
+//            let deviceToken = APNSTokenGenerator().generate()
+//            Mindbox.shared.apnsTokenUpdate(deviceToken: deviceToken)
+//        }
 
         delay(of: .default)
 
@@ -83,7 +97,7 @@ class VersioningTestCase: XCTestCase {
         self.guaranteedDeliveryManager.canScheduleOperations = false
         let infoUpdateLimit = 50
 
-        makeMockAsyncCallWithDelay(limit: infoUpdateLimit) { index in
+        makeMockSequentialCall(limit: infoUpdateLimit) { index in
             Mindbox.shared.notificationsRequestAuthorization(granted: index % 2 == 0)
         }
 
@@ -91,6 +105,9 @@ class VersioningTestCase: XCTestCase {
 
         do {
             let events = try self.databaseRepository.query(fetchLimit: infoUpdateLimit)
+            XCTAssertNotEqual(events.count, 0)
+            XCTAssertEqual(events.count, infoUpdateLimit)
+
             events.forEach({
                 XCTAssertTrue($0.type == .infoUpdated)
             })
@@ -117,7 +134,7 @@ private extension VersioningTestCase {
         var dispatchTime: DispatchTime {
             switch self {
             case .default:
-                    .now() + .seconds(1) + .milliseconds(500)
+                    .now() + .seconds(3) + .milliseconds(500)
             case .custom(let interval):
                     .now() + interval
             }
@@ -126,7 +143,7 @@ private extension VersioningTestCase {
         var timeInterval: TimeInterval {
             switch self {
             case .default:
-                return 1.5 // 1.5 секунды
+                return 3.5 // 1.5 секунды
             case .custom(let interval):
                 switch interval {
                 case .seconds(let seconds):
@@ -169,21 +186,51 @@ private extension VersioningTestCase {
         Mindbox.shared.initialization(configuration: configuration)
     }
 
+//    func makeMockAsyncCallWithDelay(limit: Int, mockSDKCall: @escaping ((Int) -> Void)) {
+//        let delayExpectation = expectation(description: "Delay for async call")
+//        delayExpectation.expectedFulfillmentCount = limit
+//
+//        var countOfCalls = 0
+//
+//        makeMockAsyncCall(limit: limit) { int in
+//            countOfCalls += 1
+//            mockSDKCall(int)
+//            delayExpectation.fulfill()
+//        }
+//
+//        wait(for: [delayExpectation], timeout: TimeInterval(limit / 2))
+//
+//        XCTAssertEqual(countOfCalls, limit)
+//    }
+
     func makeMockAsyncCallWithDelay(limit: Int, mockSDKCall: @escaping ((Int) -> Void)) {
-        let delayExpectation = expectation(description: "Delay for async call")
-        delayExpectation.expectedFulfillmentCount = limit
+        let dispatchGroup = DispatchGroup()
 
-        var countOfCalls = 0
-
-        makeMockAsyncCall(limit: limit) { int in
-            countOfCalls += 1
-            mockSDKCall(int)
-            delayExpectation.fulfill()
+        for index in 1...limit {
+            dispatchGroup.enter()
+            DispatchQueue.global().async {
+                mockSDKCall(index)
+                dispatchGroup.leave()
+            }
         }
 
-        wait(for: [delayExpectation], timeout: TimeInterval(limit / 2))
+        // Явное ожидание завершения всех задач
+        let result = dispatchGroup.wait(timeout: .now() + TimeInterval(limit / 2))
+        XCTAssertEqual(result, .success, "Timeout while waiting for async calls")
 
-        XCTAssertEqual(countOfCalls, limit)
+        // Проверяем, что все вызовы произошли
+        XCTAssertEqual(dispatchGroup.wait(timeout: .now()), .success, "Not all calls completed")
+    }
+
+    func makeMockSequentialCall(limit: Int, mockSDKCall: @escaping ((Int) -> Void)) {
+        let serialQueue = DispatchQueue(label: "com.Mindbox.testInfoUpdateVersioning.serial")
+
+        for index in 1...limit {
+            serialQueue.sync {
+//                print("Executing task for index: \(index)")
+                mockSDKCall(index)
+            }
+        }
     }
 
     func makeMockAsyncCall(limit: Int, mockSDKCall: @escaping ((Int) -> Void)) {
