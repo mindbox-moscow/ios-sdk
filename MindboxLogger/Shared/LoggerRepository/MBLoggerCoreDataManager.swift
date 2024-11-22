@@ -340,7 +340,7 @@ private extension MBLoggerCoreDataManager {
     }
 }
 
-#if DEBUG
+//#if DEBUG
 extension MBLoggerCoreDataManager {
     var debugBatchSize: Int {
         return Constants.batchSize
@@ -356,4 +356,4 @@ extension MBLoggerCoreDataManager {
         self.init(isAppExtension: debugIsAppExtension)
     }
 }
-#endif
+//#endif
