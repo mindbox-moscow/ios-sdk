@@ -42,6 +42,7 @@ final class GuaranteedDeliveryManager: NSObject {
 
     var canScheduleOperations = false {
         didSet {
+            print("CAN SCHEDULE: \(canScheduleOperations)")
             Logger.common(message: "canScheduleOperation didSet to value: \(canScheduleOperations)", level: .info, category: .delivery)
             performScheduleIfNeeded()
         }

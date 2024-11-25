@@ -79,9 +79,11 @@ final class CoreController {
         controllerQueue.async {
             let isNotificationsEnabled = granted ?? self.notificationStatus()
             guard self.persistenceStorage.isNotificationsEnabled != isNotificationsEnabled else {
+                print("FAIL KEK")
                 return
             }
             guard self.persistenceStorage.isInstalled else {
+                print("FAIL LOL")
                 return
             }
             self.updateInfo(

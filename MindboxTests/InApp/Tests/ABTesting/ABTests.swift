@@ -8,35 +8,35 @@
 
 // swiftlint:disable comment_spacing
 
-//import Foundation
-//import XCTest
-//@testable import Mindbox
-//
-//class ABTests: XCTestCase {
-//
-//    var container = try! TestDependencyProvider()
-//
+import Foundation
+import XCTest
+@testable import Mindbox
+
+class ABTests: XCTestCase {
+
 //    var sessionTemporaryStorage: SessionTemporaryStorage {
-//        container.sessionTemporaryStorage
+//        DI.injectOrFail(SessionTemporaryStorage.self)
 //    }
-//
-//    var persistenceStorage: PersistenceStorage {
-//        container.persistenceStorage
-//    }
-//
+
+    var persistenceStorage: PersistenceStorage {
+        DI.injectOrFail(PersistenceStorage.self)
+    }
+
 //    var networkFetcher: NetworkFetcher {
-//        container.instanceFactory.makeNetworkFetcher()
+//        DI.injectOrFail(NetworkFetcher.self)
 //    }
-//
+
 //    var sdkVersionValidator: SDKVersionValidator!
-//
+
+    private var filter: InappFilterProtocol!
+
 //    private var mapper: InAppConfigutationMapper!
-//    private let configStub = InAppConfigStub()
 //    private let targetingChecker: InAppTargetingCheckerProtocol = InAppTargetingChecker()
 //    private var shownInAppsIds: Set<String>!
-//
-//    override func setUp() {
-//        super.setUp()
+
+    override func setUp() {
+        super.setUp()
+        filter = DI.injectOrFail(InappFilterProtocol.self)
 //        sdkVersionValidator = SDKVersionValidator(sdkVersionNumeric: 6)
 //        mapper = InAppConfigutationMapper(inappFilterService: container.inappFilterService,
 //                                          geoService: container.geoService,
@@ -49,70 +49,77 @@
 //                                          imageDownloadService: container.imageDownloadService,
 //                                          abTestDeviceMixer: container.abTestDeviceMixer)
 //        shownInAppsIds = Set(persistenceStorage.shownInAppsIds ?? [])
-//    }
-//
-//    func test_no_abtests() throws {
-//        let response = try getConfig(name: "ConfigWithAB_1")
-//        let abTests: [ABTest]? = nil
+    }
+
+    func test_no_abtests() throws {
+        let response = try getConfig(name: "ConfigWithAB_1")
+        let abTests: [ABTest]? = nil
 //        let inapps = mapper.filterInappsByABTests(abTests, responseInapps: response.inapps?.elements)
-//        XCTAssertEqual(inapps.count, 3)
-//        let expectedIds = [
-//            "655f5ffa-de86-4224-a0bf-229fe208ed0d",
-//            "6f93e2ef-0615-4e63-9c80-24bcb9e83b83",
-//            "b33ca779-3c99-481f-ad46-91282b0caf04"
-//        ]
-//
-//        runInAppTestForUUID("BBBC2BA1-0B5B-4C9E-AB0E-95C54775B4F1",
-//                            abTests: abTests,
-//                            responseInapps: response.inapps?.elements,
-//                            expectedCount: 3, expectedIds: expectedIds)
-//    }
-//
-//    func test_compare_inapps_with_cg() throws {
-//        let response = try getConfig(name: "ConfigWithAB_1")
-//        let abTests: [ABTest]? = [
-//            ABTest(
-//                id: "0ec6be6b-421f-464b-9ee4-348a5292a5fd",
-//                sdkVersion: SdkVersion(min: 6, max: nil),
-//                salt: "BBBC2BA1-0B5B-4C9E-AB0E-95C54775B4F1",
-//                variants: [
-//                    ABTest.ABTestVariant(
-//                        id: "155f5ffa-de86-4224-a0bf-229fe208ed0d",
-//                        modulus: ABTest.ABTestVariant.Modulus(lower: 0, upper: 50),
-//                        objects: [
-//                            ABTest.ABTestVariant.ABTestObject(
-//                                type: .inapps,
-//                                kind: .concrete,
-//                                inapps: []
-//                            )
-//                        ]
-//                    ),
-//                    ABTest.ABTestVariant(
-//                        id: "211f1c16-fa72-4456-bf87-af448eb84a32",
-//                        modulus: ABTest.ABTestVariant.Modulus(lower: 50, upper: 100),
-//                        objects: [
-//                            ABTest.ABTestVariant.ABTestObject(
-//                                type: .inapps,
-//                                kind: .all,
-//                                inapps: nil
-//                            )
-//                        ]
-//                    )
-//                ]
-//            )
-//        ]
-//
+        let inapps: [InApp] = filterValidInAppMessagesTests(response.inapps!.elements)
+        XCTAssertEqual(inapps.count, 3)
+        let expectedIds = [
+            "655f5ffa-de86-4224-a0bf-229fe208ed0d",
+            "6f93e2ef-0615-4e63-9c80-24bcb9e83b83",
+            "b33ca779-3c99-481f-ad46-91282b0caf04"
+        ]
+
+        runInAppTestForUUID("BBBC2BA1-0B5B-4C9E-AB0E-95C54775B4F1",
+                            abTests: abTests,
+                            responseInapps: inapps,
+                            expectedCount: 3, expectedIds: expectedIds)
+    }
+
+    func test_compare_inapps_with_cg() throws {
+        let response = try getConfig(name: "ConfigWithAB_1")
+        let abTests: [ABTest]? = [
+            ABTest(
+                id: "0ec6be6b-421f-464b-9ee4-348a5292a5fd",
+                sdkVersion: SdkVersion(min: 6, max: nil),
+                salt: "BBBC2BA1-0B5B-4C9E-AB0E-95C54775B4F1",
+                variants: [
+                    ABTest.ABTestVariant(
+                        id: "155f5ffa-de86-4224-a0bf-229fe208ed0d",
+                        modulus: ABTest.ABTestVariant.Modulus(lower: 0, upper: 50),
+                        objects: [
+                            ABTest.ABTestVariant.ABTestObject(
+                                type: .inapps,
+                                kind: .concrete,
+                                inapps: []
+                            )
+                        ]
+                    ),
+                    ABTest.ABTestVariant(
+                        id: "211f1c16-fa72-4456-bf87-af448eb84a32",
+                        modulus: ABTest.ABTestVariant.Modulus(lower: 50, upper: 100),
+                        objects: [
+                            ABTest.ABTestVariant.ABTestObject(
+                                type: .inapps,
+                                kind: .all,
+                                inapps: nil
+                            )
+                        ]
+                    )
+                ]
+            )
+        ]
+
+//        let inapps: [InApp] = filter.filter(inapps: response.inapps?.elements, abTests: abTests)
+        let inapps: [InApp] = filterValidInAppMessagesTests(response.inapps!.elements)
+        runInAppTestForUUID("4078E211-7C3F-C607-D35C-DC6B591EF355", abTests: abTests, responseInapps: inapps, expectedCount: 0, expectedIds: []) // 25
+
 //        runInAppTestForUUID("4078E211-7C3F-C607-D35C-DC6B591EF355", abTests: abTests, responseInapps: response.inapps?.elements, expectedCount: 0, expectedIds: []) // 25
-//
-//        let expectedIds = [
-//            "655f5ffa-de86-4224-a0bf-229fe208ed0d",
-//            "6f93e2ef-0615-4e63-9c80-24bcb9e83b83",
-//            "b33ca779-3c99-481f-ad46-91282b0caf04"
-//        ]
-//
+
+        let expectedIds = [
+            "655f5ffa-de86-4224-a0bf-229fe208ed0d",
+            "6f93e2ef-0615-4e63-9c80-24bcb9e83b83",
+            "b33ca779-3c99-481f-ad46-91282b0caf04"
+        ]
+
+        runInAppTestForUUID("4D27710A-3F3A-FF6E-7764-375B1E06E05D", abTests: abTests, responseInapps: inapps, expectedCount: 3, expectedIds: expectedIds) // 75
+
 //        runInAppTestForUUID("4D27710A-3F3A-FF6E-7764-375B1E06E05D", abTests: abTests, responseInapps: response.inapps?.elements, expectedCount: 3, expectedIds: expectedIds) // 75
-//    }
-//
+    }
+
 //    func test_compare_cg_and_concrete_inapps() throws {
 //        let response = try getConfig(name: "ConfigWithAB_2")
 //        let abTests: [ABTest]? = [
@@ -823,22 +830,51 @@
 //        let response = try getConfig(name: "ConfigWithABTypeNotInapps")
 //        XCTAssertNil(response.abtests)
 //    }
-//}
-//
-//private extension ABTests {
-//    private func getConfig(name: String) throws -> ConfigResponse {
-//        let bundle = Bundle(for: ABTests.self)
-//        let fileURL = bundle.url(forResource: name, withExtension: "json")!
-//        let data = try Data(contentsOf: fileURL)
-//        return try JSONDecoder().decode(ConfigResponse.self, from: data)
-//    }
-//
-//    private func runInAppTestForUUID(_ uuid: String, abTests: [ABTest]?, responseInapps: [InApp]?, expectedCount: Int, expectedIds: [String]) {
-//        persistenceStorage.deviceUUID = uuid
+}
+
+private extension ABTests {
+    private func getConfig(name: String) throws -> ConfigResponse {
+        let bundle = Bundle(for: ABTests.self)
+        let fileURL = bundle.url(forResource: name, withExtension: "json")!
+        let data = try Data(contentsOf: fileURL)
+        return try JSONDecoder().decode(ConfigResponse.self, from: data)
+    }
+
+    private func runInAppTestForUUID(_ uuid: String, abTests: [ABTest]?, responseInapps: [InApp]?, expectedCount: Int, expectedIds: [String]) {
+        persistenceStorage.deviceUUID = uuid
 //        let inapps = mapper.filterInappsByABTests(abTests, responseInapps: responseInapps)
-//        XCTAssertEqual(inapps.count, expectedCount)
-//        for inapp in inapps {
-//            XCTAssertTrue(expectedIds.contains { $0 == inapp.id })
+        let inapps = filter.filterInappsByABTests(abTests, responseInapps: responseInapps)
+        XCTAssertEqual(inapps.count, expectedCount)
+        for inapp in inapps {
+            XCTAssertTrue(expectedIds.contains { $0 == inapp.id })
+        }
+    }
+
+    func filterValidInAppMessagesTests(_ inapps: [InAppDTO]) -> [InApp] {
+        let variantsFilter: VariantFilterProtocol = DI.injectOrFail(VariantFilterProtocol.self)
+        var filteredInapps: [InApp] = []
+        for inapp in inapps {
+            do {
+                let variants = try variantsFilter.filter(inapp.form.variants)
+                if !variants.isEmpty {
+                    let formModel = InAppForm(variants: variants)
+                    let inappModel = InApp(id: inapp.id,
+                                           sdkVersion: inapp.sdkVersion,
+                                           targeting: inapp.targeting,
+                                           frequency: inapp.frequency,
+                                           form: formModel)
+                    filteredInapps.append(inappModel)
+                }
+            } catch {
+
+            }
+        }
+        return filteredInapps
+    }
+
+//    func test(_ inapps: [InAppDTO]) -> [InApp] {
+//        inapps.map {
+//            InApp(id: $0.id, sdkVersion: $0.sdkVersion, targeting: $0.targeting, frequency: $0.frequency, form: $0.form)
 //        }
 //    }
-//}
+}
