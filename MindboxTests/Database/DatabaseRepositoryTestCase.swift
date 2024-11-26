@@ -187,15 +187,17 @@ class DatabaseRepositoryTestCase: XCTestCase {
             try databaseRepository.update(event: $0)
         }
 
-        let retryDeadline: TimeInterval = 4
-        let expectDeadline = retryDeadline + 2
+        let retryDeadline: TimeInterval = 1
+        let expectDeadline = retryDeadline + 1
         let retryExpectation = expectation(description: "RetryExpectation")
         DispatchQueue.main.asyncAfter(deadline: .now() + expectDeadline) {
             do {
                 let events = try self.databaseRepository.query(fetchLimit: count, retryDeadline: retryDeadline)
                 XCTAssertFalse(events.isEmpty)
-                XCTAssertTrue(retriedEvent.transactionId == events[events.count - 2].transactionId)
-                XCTAssertTrue(retriedEvent2.transactionId == events[events.count - 1].transactionId)
+                XCTAssertEqual(retriedEvent.transactionId, events[events.count - 2].transactionId)
+                XCTAssertEqual(retriedEvent2.transactionId, events[events.count - 1].transactionId)
+//                XCTAssertTrue(retriedEvent.transactionId == events[events.count - 2].transactionId)
+//                XCTAssertTrue(retriedEvent2.transactionId == events[events.count - 1].transactionId)
                 retryExpectation.fulfill()
             } catch {
                 XCTFail(error.localizedDescription)
