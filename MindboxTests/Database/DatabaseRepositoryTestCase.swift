@@ -266,6 +266,7 @@ class DatabaseRepositoryTestCase: XCTestCase {
         let retriedEvent = events[count / 2]
         let retriedEvent2 = events[(count / 2) + 1]
         let eventsToRetry = [retriedEvent, retriedEvent2]
+
         do {
             try events.forEach {
                 try databaseRepository.create(event: $0)
@@ -273,6 +274,7 @@ class DatabaseRepositoryTestCase: XCTestCase {
         } catch {
             XCTFail(error.localizedDescription)
         }
+
         do {
             try eventsToRetry.forEach {
                 try databaseRepository.update(event: $0)
@@ -280,8 +282,9 @@ class DatabaseRepositoryTestCase: XCTestCase {
         } catch {
             XCTFail(error.localizedDescription)
         }
-        let retryDeadline: TimeInterval = 4
-        let expectDeadline = retryDeadline + 2
+
+        let retryDeadline: TimeInterval = 1
+        let expectDeadline = retryDeadline + 1
         let retryExpectation = expectation(description: "RetryExpectation")
         DispatchQueue.main.asyncAfter(deadline: .now() + expectDeadline) {
             do {
@@ -294,6 +297,8 @@ class DatabaseRepositoryTestCase: XCTestCase {
                 XCTFail(error.localizedDescription)
             }
         }
-        waitForExpectations(timeout: retryDeadline + 2.0)
+
+        wait(for: [retryExpectation], timeout: retryDeadline + 1)
+//        waitForExpectations(timeout: retryDeadline + 2.0)
     }
 }
