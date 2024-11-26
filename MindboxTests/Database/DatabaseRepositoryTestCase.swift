@@ -179,12 +179,19 @@ class DatabaseRepositoryTestCase: XCTestCase {
         let retriedEvent2 = events[(count / 2) + 1]
         let eventsToRetry = [retriedEvent, retriedEvent2]
 
-        try events.forEach {
-            try databaseRepository.create(event: $0)
+        try events.forEach { try databaseRepository.create(event: $0) }
+
+        for event in events {
+            let fetchedEvent = try databaseRepository.read(by: event.transactionId)
+            XCTAssertEqual(fetchedEvent?.retryTimestamp, 0.0)
         }
 
-        try eventsToRetry.forEach {
-            try databaseRepository.update(event: $0)
+        try eventsToRetry.forEach { try databaseRepository.update(event: $0) }
+
+        for event in eventsToRetry {
+            let fetchedEvent = try databaseRepository.read(by: event.transactionId)
+            let retryTimestamp = try XCTUnwrap(fetchedEvent?.retryTimestamp)
+            XCTAssertGreaterThan(retryTimestamp, 0.0)
         }
 
         let retryDeadline: TimeInterval = 1
@@ -194,6 +201,7 @@ class DatabaseRepositoryTestCase: XCTestCase {
             do {
                 let events = try self.databaseRepository.query(fetchLimit: count, retryDeadline: retryDeadline)
                 XCTAssertFalse(events.isEmpty)
+                XCTAssertEqual(events.count, count)
                 XCTAssertEqual(retriedEvent.transactionId, events[events.count - 2].transactionId)
                 XCTAssertEqual(retriedEvent2.transactionId, events[events.count - 1].transactionId)
 //                XCTAssertTrue(retriedEvent.transactionId == events[events.count - 2].transactionId)
