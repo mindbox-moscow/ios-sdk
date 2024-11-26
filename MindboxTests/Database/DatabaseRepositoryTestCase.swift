@@ -10,7 +10,7 @@ import XCTest
 import CoreData
 @testable import Mindbox
 
-// swiftlint:disable force_try
+// swiftlint:disable force_try force_cast
 
 class DatabaseRepositoryTestCase: XCTestCase {
 
@@ -24,7 +24,7 @@ class DatabaseRepositoryTestCase: XCTestCase {
 
         try! databaseRepository.erase()
         updateDatabaseRepositoryWith(createsDeprecated: false)
-//        (databaseRepository as! MockDatabaseRepository).tempLimit = nil
+        (databaseRepository as! MockDatabaseRepository).tempLimit = nil
         // Put setup code here. This method is called before the invocation of each test method in the class.
     }
 
@@ -141,7 +141,7 @@ class DatabaseRepositoryTestCase: XCTestCase {
 
     func testCleanUpWhenTryCountEvents() {
         try! databaseRepository.erase()
-//        (databaseRepository as! MockDatabaseRepository).tempLimit = 3
+        (databaseRepository as! MockDatabaseRepository).tempLimit = 3
         let events = eventGenerator.generateEvents(count: databaseRepository.limit * 2)
         do {
             try events.forEach {
