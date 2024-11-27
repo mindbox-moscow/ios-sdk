@@ -181,20 +181,20 @@ class DatabaseRepositoryTestCase: XCTestCase {
 
         try events.forEach { try databaseRepository.create(event: $0) }
 
-        for event in events {
-            let fetchedEvent = try databaseRepository.read(by: event.transactionId)
+        try events.forEach {
+            let fetchedEvent = try databaseRepository.read(by: $0.transactionId)
             XCTAssertEqual(fetchedEvent?.retryTimestamp, 0.0)
         }
 
         try eventsToRetry.forEach { try databaseRepository.update(event: $0) }
 
-        for event in eventsToRetry {
-            let fetchedEvent = try databaseRepository.read(by: event.transactionId)
+        try eventsToRetry.forEach {
+            let fetchedEvent = try databaseRepository.read(by: $0.transactionId)
             let retryTimestamp = try XCTUnwrap(fetchedEvent?.retryTimestamp)
             XCTAssertGreaterThan(retryTimestamp, 0.0)
         }
 
-        let retryDeadline: TimeInterval = 1
+        let retryDeadline: TimeInterval = 2
         let expectDeadline = retryDeadline + 1
         let retryExpectation = expectation(description: "RetryExpectation")
         DispatchQueue.main.asyncAfter(deadline: .now() + expectDeadline) {
@@ -204,13 +204,12 @@ class DatabaseRepositoryTestCase: XCTestCase {
                 XCTAssertEqual(events.count, count)
                 XCTAssertEqual(retriedEvent.transactionId, events[events.count - 2].transactionId)
                 XCTAssertEqual(retriedEvent2.transactionId, events[events.count - 1].transactionId)
-//                XCTAssertTrue(retriedEvent.transactionId == events[events.count - 2].transactionId)
-//                XCTAssertTrue(retriedEvent2.transactionId == events[events.count - 1].transactionId)
                 retryExpectation.fulfill()
             } catch {
                 XCTFail(error.localizedDescription)
             }
         }
-        waitForExpectations(timeout: retryDeadline + 2.0)
+
+        waitForExpectations(timeout: expectDeadline + 2.0)
     }
 }
