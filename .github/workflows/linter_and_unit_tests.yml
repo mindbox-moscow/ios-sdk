@@ -1,6 +1,8 @@
 name: SwiftLint + UnitTests
 
 on:
+  pull_request:
+    types: [ opened, synchronize ]
   push:
     branches:
       - '**'
